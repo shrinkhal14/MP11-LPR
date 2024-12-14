@@ -1,0 +1,93 @@
+from flask import Flask, render_template, request, jsonify
+import cv2
+import pytesseract
+import numpy as np
+import base64
+import logging
+import time
+from number_plate import process_image
+from flask_cors import CORS
+from datetime import datetime
+
+app = Flask(_name_)
+CORS(app)  # Enable CORS if needed
+
+# Path to tesseract executable
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Update this path if necessary
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/help')
+def help():
+    return render_template('help.html')
+
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+@app.route('/process_image', methods=['POST'])
+def process_image_route():
+    try:
+        data = request.get_json()
+        image_data = data.get('image')
+
+        if not image_data:
+            logging.error("No image data provided.")
+            return jsonify({'error': 'No image data provided'})
+
+        # Decode the base64 image data
+        header, encoded = image_data.split(",", 1)
+        binary_image_data = base64.b64decode(encoded)
+        nparr = np.frombuffer(binary_image_data, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        # Generate a unique filename for the received image
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
+        received_image_filename = f'received_image_{timestamp}.jpg'
+
+        # Save the received image to verify it's the current one
+        cv2.imwrite(received_image_filename, image)
+        logging.debug(f"Saved received image as {received_image_filename}")
+
+        # Measure the time taken for license plate detection
+        start_time = time.time()
+        
+        # Process the image with your ML model
+        detected_text = process_image(image)  # Expecting only detected text as output
+        detection_time = time.time() - start_time
+        logging.debug(f"Detection Time: {detection_time:.2f} seconds")
+
+        if not detected_text:
+            logging.warning("No license plate detected.")
+            return jsonify({'error': 'No license plate detected'})
+
+        # Convert the original image to grayscale
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, buffer = cv2.imencode('.jpg', gray_image)
+        grayscale_image_base64 = base64.b64encode(buffer).decode('utf-8')
+
+        return jsonify({
+            'result': detected_text,  # Original detected text from the process_image function
+            'detection_time': f"{detection_time:.2f} seconds",
+            'grayscale_image': f"data:image/jpeg;base64,{grayscale_image_base64}"
+        })
+
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        return jsonify({'error': 'Unexpected error processing image', 'details': str(e)})
+
+if _name_ == '_main_':
+    app.run(debug=True)  # Set to debug=False for production
