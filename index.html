@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LicenseEye</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        .navbar {
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .nav-link {
+            color: #2c3e50;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #3498db;
+        }
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .btn-outline-primary {
+            border: 2px solid #3498db;
+            color: #3498db;
+            font-weight: 600;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-outline-primary:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        .result-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+        .result-card h3 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        .result-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .plate-number, .authorization-time, .processing-time, .authorization-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        .value {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        #result {
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin: 2rem auto;
+            max-width: 600px;
+            text-align: center;
+            color: #2c3e50;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .status-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .status-light.ready {
+            background: #2ecc71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+        .status-light.processing {
+            background: #f1c40f;
+            box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+            animation: pulse 1.5s infinite;
+        }
+        .status-light.error {
+            background: #e74c3c;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+        .status-light.success {
+            background: #2ecc71;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+        .status-text {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        .status-message {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        .camera-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        #captureBtn {
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="{{ url_for('index') }}">LicenseEye</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('help') }}">Help</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('contact') }}">Contact Us</a></li>
+                </ul>
+                <div class="nav-buttons">
+                    <a class="btn btn-outline-primary mr-2" href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    </a>
+                    <a class="btn btn-primary" href="{{ url_for('signup') }}">
+                        <i class="fas fa-user-plus mr-2"></i>Sign Up
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Hero Section -->
+        <section class="hero-section text-center">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>LicenseEye: Your Go-To Solution for Efficient License Plate Recognition</h1>
+                    <p>
+                        Effortlessly identify and manage license plates with our advanced recognition technology.
+                        Use your camera to detect and recognize license plates in real-time.
+                    </p>
+                </div>
+                <div class="hero-image-container">
+                    <img src="{{ url_for('static', filename='license1.webp') }}" alt="Hero Image" class="hero-image">
+                </div>
+            </div>
+        </section>
+
+        <!-- Camera and Results Section -->
+        <section class="detection-section">
+            <div class="detection-container">
+                <!-- Camera Section -->
+                <div class="camera-section">
+                    <h2 class="upload-title">Use Your Camera to Detect License Plates</h2>
+                    <video id="video" width="480" height="360" autoplay></video>
+                    <canvas id="canvas" class="d-none"></canvas>
+                    <div class="camera-controls">
+                        <button id="captureBtn" class="btn btn-primary">Start Detection</button>
+                        <div class="status-indicator">
+                            <span class="status-text">Status: </span>
+                            <span class="status-light"></span>
+                            <span class="status-message">Ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="results-section">
+                    <div class="result-card">
+                        <h3>Detection Results</h3>
+                        <div class="result-content">
+                            <div class="plate-number">
+                                <span class="label">Plate Number:</span>
+                                <span class="value" id="plateNumber">-</span>
+                            </div>
+                            <div class="authorization-time">
+                                <span class="label">Authorization Time:</span>
+                                <span class="value" id="authTime">-</span>
+                            </div>
+                            <div class="processing-time">
+                                <span class="label">Processing Time:</span>
+                                <span class="value" id="processingTime">-</span>
+                            </div>
+                            <div class="authorization-status">
+                                <span class="label">Status:</span>
+                                <span class="value" id="authStatus">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <h2>Features</h2>
+            <div class="feature-boxes">
+                <div class="feature-box">
+                    <img src="{{ url_for('static', filename='license2.png') }}" alt="Fast and Accurate Recognition" class="feature-image">
+                    <h3>Fast and Accurate Recognition</h3>
+                    <p>Our system provides quick and precise recognition of license plates, ensuring that you get the information you need in seconds.</p>
+                </div>
+                <div class="feature-box">
+                    <img src="{{ url_for('static', filename='license6.png') }}" alt="High-Resolution Image Support" class="feature-image">
+                    <h3>High-Resolution Image Support</h3>
+                    <p>Supports high-resolution images to ensure that even the smallest details of the license plate are captured and recognized.</p>
+                </div>
+                <div class="feature-box">
+                    <img src="{{ url_for('static', filename='upload.jpg') }}" alt="User-Friendly Interface" class="feature-image">
+                    <h3>User-Friendly Interface</h3>
+                    <p>Enjoy a clean and intuitive interface that makes viewing results a breeze.</p>
+                </div>
+                <div class="feature-box">
+                    <img src="{{ url_for('static', filename='license3.png') }}" alt="Secure and Private" class="feature-image">
+                    <h3>Secure and Private</h3>
+                    <p>Your data is securely handled with strict privacy measures to ensure your information remains confidential.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="how-it-works">
+            <h2>How It Works</h2>
+            <p>Our license plate recognition system uses state-of-the-art machine learning algorithms to analyze and interpret license plate images. Here's how it works:</p>
+            <ol>
+                <li><strong>Start Camera:</strong> Allow camera access to start real-time license plate detection.</li>
+                <li><strong>Image Processing:</strong> The system processes live video frames to detect and isolate the license plate.</li>
+                <li><strong>Plate Recognition:</strong> Advanced algorithms extract and decode the license plate characters.</li>
+                <li><strong>Result Display:</strong> The recognized plate number is displayed for you to review.</li>
+            </ol>
+        </section>
+
+        <p id="result" class="text-center font-weight-bold"></p> <!-- Display detected plate numbers here -->
+    </main>
+
+    <footer class="text-center py-3">
+        <p>&copy; 2024 LicenseEye. All rights reserved.</p>
+    </footer>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <!-- Custom Firebase logic (must come after Firebase SDKs) -->
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+
+    <!-- Camera and Detection Logic -->
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const statusLight = document.querySelector('.status-light');
+        const statusMessage = document.querySelector('.status-message');
+
+        function updateStatus(status, message) {
+            statusLight.className = 'status-light ' + status;
+            statusMessage.textContent = message;
+        }
+
+        // Request access to the user's camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+                updateStatus('ready', 'Ready');
+            })
+            .catch((err) => {
+                console.error('Error accessing the camera:', err);
+                updateStatus('error', 'Camera Error');
+            });
+
+        // Capture the current frame and send for detection
+        captureBtn.addEventListener('click', () => {
+            updateStatus('processing', 'Processing...');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert the canvas image to a data URL with JPEG format
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            console.log('Captured image size:', imageData.length);
+            detectLicensePlate(imageData);
+        });
+
+        // Function to send captured image data for recognition
+        function detectLicensePlate(imageData) {
+            fetch('/process_image', {
+                method: 'POST',
+                body: JSON.stringify({ image: imageData }),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Network response was not ok');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Received data:', data); // Debug log
+                if (data.error) {
+                    updateStatus('error', 'Detection Failed');
+                    document.getElementById('result').innerText = data.error;
+                } else if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+                    updateStatus('success', 'Success');
+                    const plateNumbers = data.result.join(', ');
+                    console.log('Plate numbers:', plateNumbers); // Debug log
+                    document.getElementById('plateNumber').innerText = plateNumbers;
+                    document.getElementById('authTime').innerText = new Date().toLocaleTimeString();
+                    document.getElementById('processingTime').innerText = data.detection_time;
+                    document.getElementById('authStatus').innerText = data.authorization;
+                } else {
+                    updateStatus('error', 'No Plate Detected');
+                    document.getElementById('result').innerText = 'No plates detected.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                updateStatus('error', 'Connection Error');
+                document.getElementById('result').innerText = error.message;
+            });
+        }
+    </script>
+
+</body>
+
+</html>
+
